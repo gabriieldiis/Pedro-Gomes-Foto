@@ -1,0 +1,80 @@
+---
+/**
+ * Botão "Ver o filme completo" + janela (<dialog> nativo).
+ * Nada do Vimeo é carregado até a pessoa clicar: o player do Vimeo pesa ~1 MB de JS.
+ */
+interface Props {
+  vimeoId?: string;
+  arquivo: string; // usado quando não há vimeoId
+  titulo: string;
+  class?: string;
+}
+const { vimeoId = '', arquivo, titulo, class: classe } = Astro.props;
+---
+<button class:list={['botao filme-abrir', classe]} type="button" data-filme-abrir>
+  <span class="filme-play" aria-hidden="true"></span>
+  Ver o filme completo
+</button>
+
+<dialog class="filme" data-filme data-vimeo={vimeoId} data-arquivo={arquivo} aria-label={titulo}>
+  <div class="filme__palco" data-filme-palco></div>
+  <form method="dialog">
+    <button class="botao botao--claro filme__fechar" type="submit">Fechar</button>
+  </form>
+</dialog>
+
+<style>
+  .filme-play {
+    width: 0.6rem; height: 0.7rem;
+    background: currentColor;
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+  }
+  .filme {
+    width: 100vw; max-width: 100vw;
+    height: 100dvh; max-height: 100dvh;
+    margin: 0; padding: var(--margem);
+    border: 0;
+    background: #000;
+    color: #fff;
+  }
+  .filme[open] { display: grid; grid-template-rows: 1fr auto; gap: var(--margem); }
+  .filme::backdrop { background: #000; }
+  .filme__palco { display: grid; place-items: center; min-height: 0; }
+  .filme__palco :is(iframe, video) {
+    width: 100%; max-height: 100%;
+    aspect-ratio: 16 / 9;
+    border: 0;
+    background: #000;
+  }
+  .filme form { justify-self: center; }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-filme-abrir]').forEach((botao) => {
+    const dialogo = botao.nextElementSibling as HTMLDialogElement;
+    const palco = dialogo.querySelector<HTMLElement>('[data-filme-palco]')!;
+
+    botao.addEventListener('click', () => {
+      const id = dialogo.dataset.vimeo;
+      if (id) {
+        const f = document.createElement('iframe');
+        f.src = `https://player.vimeo.com/video/${id}?autoplay=1&dnt=1&title=0&byline=0&portrait=0`;
+        f.allow = 'autoplay; fullscreen; picture-in-picture';
+        f.allowFullscreen = true;
+        f.title = dialogo.getAttribute('aria-label') ?? 'Filme';
+        palco.replaceChildren(f);
+      } else {
+        const v = document.createElement('video');
+        v.src = dialogo.dataset.arquivo!;
+        v.controls = true;
+        v.playsInline = true;
+        v.autoplay = true;
+        palco.replaceChildren(v);
+      }
+      dialogo.showModal();
+    });
+
+    // fechar = descarregar (para o áudio e libera memória)
+    dialogo.addEventListener('close', () => palco.replaceChildren());
+  });
+</script>

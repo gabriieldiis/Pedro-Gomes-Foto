@@ -1,0 +1,161 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import { getImage } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import Foto from '../../components/Foto.astro';
+import VideoLeve from '../../components/VideoLeve.astro';
+
+export async function getStaticPaths() {
+  const todos = (await getCollection('trabalhos')).sort((a, b) => a.data.ordem - b.data.ordem);
+  return todos.map((t, i) => ({
+    params: { slug: t.id },
+    props: { trabalho: t, numero: i + 1, total: todos.length, proximo: todos[(i + 1) % todos.length] },
+  }));
+}
+
+interface Props {
+  trabalho: CollectionEntry<'trabalhos'>;
+  numero: number;
+  total: number;
+  proximo: CollectionEntry<'trabalhos'>;
+}
+const { trabalho, numero, total, proximo } = Astro.props;
+const d = trabalho.data;
+const { Content } = await render(trabalho);
+const dois = (x: number) => String(x).padStart(2, '0');
+
+// a capa já aparece no topo, então não repete na galeria
+const fotos = d.fotos.filter((f) => f.src.src !== d.capa.src);
+const social = await getImage({ src: d.capa, width: 1200, format: 'jpg' });
+
+function tamanho(f: (typeof fotos)[number]) {
+  if (f.largura === 'metade') return '(min-width: 48em) 50vw, 100vw';
+  return f.src.width > f.src.height ? '(min-width: 75em) 1200px, 100vw' : '(min-width: 48em) 60vw, 100vw';
+}
+---
+<Base titulo={d.titulo} descricao={`${d.titulo}: ${d.categoria.toLowerCase()} para ${d.cliente}, ${d.local}, ${d.ano}.`} imagemSocial={social.src}>
+  <article class="projeto conteiner">
+    <header class="projeto__topo revela">
+      <div class="projeto__nav">
+        <a class="meta voltar" href="/#trabalhos">← Todos os trabalhos</a>
+        <span class="rotulo">{dois(numero)} / {dois(total)}</span>
+      </div>
+      <p class="rotulo">{d.cliente}</p>
+      <h1 class="display projeto__titulo" style={`view-transition-name: titulo-${trabalho.id}`}>{d.titulo}</h1>
+      {d.subtitulo && <p class="display projeto__sub">{d.subtitulo}</p>}
+    </header>
+
+    <div class="projeto__capa cortina">
+      <Foto src={d.capa} alt={d.capaAlt} sizes="(min-width: 75em) 1200px, 100vw" prioridade transicao={`capa-${trabalho.id}`} />
+    </div>
+
+    <div class="projeto__info bloco-verde revela-bloco">
+      <dl class="ficha">
+        <div><dt class="rotulo">Cliente</dt><dd>{d.cliente}</dd></div>
+        <div><dt class="rotulo">Tipo</dt><dd>{d.categoria}</dd></div>
+        <div><dt class="rotulo">Local</dt><dd>{d.local}</dd></div>
+        <div><dt class="rotulo">Ano</dt><dd>{d.ano}</dd></div>
+      </dl>
+      <div class="projeto__texto"><Content /></div>
+    </div>
+
+    <div class="galeria">
+      {fotos.map((f, i) => (
+        <>
+          <Foto
+            src={f.src}
+            alt={f.alt}
+            sizes={tamanho(f)}
+            class:list={[
+              'galeria__foto cortina',
+              f.largura === 'metade' ? 'galeria__foto--metade' : f.src.width > f.src.height ? 'galeria__foto--horizontal' : 'galeria__foto--vertical',
+            ]}
+          />
+          {d.video && i + 1 === d.video.depoisDaFoto && (
+            <figure class="galeria__video revela">
+              <VideoLeve nome={d.video.nome} posterMobile={d.video.posterMobile} posterDesktop={d.video.posterDesktop} />
+              <figcaption class="meta">{d.video.legenda}</figcaption>
+            </figure>
+          )}
+        </>
+      ))}
+    </div>
+  </article>
+
+  <nav class="proximo conteiner" aria-label="Próximo trabalho">
+    <a class="bloco-verde revela-bloco" href={`/trabalhos/${proximo.id}/`}>
+      <span class="rotulo">Próximo trabalho · {proximo.data.cliente}</span>
+      <span class="display proximo__titulo">{proximo.data.titulo} <span aria-hidden="true">→</span></span>
+    </a>
+  </nav>
+</Base>
+
+<style>
+  .projeto { padding-top: calc(5rem + env(safe-area-inset-top, 0px)); }
+
+  .projeto__topo { display: grid; gap: 1rem; padding-bottom: 2.5rem; }
+  .projeto__nav {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: clamp(2rem, 6vw, 4rem);
+  }
+  .voltar { text-decoration: none; }
+  .voltar:hover { color: var(--tinta); }
+  .projeto__titulo { font-size: var(--t-gigante); line-height: 0.98; letter-spacing: -0.035em; margin-left: -0.04em; }
+  .projeto__sub { font-size: var(--t-titulo-md); color: var(--apagado); font-style: italic; }
+
+  .projeto__capa { overflow: hidden; border-radius: var(--raio-foto); }
+  .projeto__capa :global(img) { width: 100%; }
+
+  .projeto__info {
+    display: grid;
+    gap: 2rem;
+    margin: clamp(1rem, 2vw, 1.5rem) 0 var(--secao);
+    padding: clamp(1.75rem, 5vw, 3.5rem);
+  }
+  .ficha {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem 1.5rem;
+  }
+  .ficha div { padding-top: 0.75rem; border-top: 1px solid var(--linha); }
+  .ficha dt { margin-bottom: 0.25rem; }
+  .ficha dd { color: var(--tinta); font-weight: 500; }
+  .projeto__texto { max-width: var(--texto-max); font-size: 1.0625rem; }
+  .projeto__texto :global(p + p) { margin-top: 1em; }
+
+  @media (min-width: 48em) {
+    .projeto__info { grid-template-columns: repeat(12, 1fr); column-gap: 1.5rem; align-items: start; }
+    .ficha { grid-column: 1 / span 5; }
+    .projeto__texto { grid-column: 7 / -1; font-size: 1.25rem; line-height: 1.5; color: var(--tinta-2); }
+  }
+
+  /* ---------- Galeria ---------- */
+  .galeria { display: grid; gap: 0.75rem; }
+  .galeria :global(.galeria__foto) { width: 100%; overflow: hidden; border-radius: var(--raio-foto); }
+  .galeria__video { display: grid; gap: 0.75rem; }
+  .galeria__video :global(.video-leve) {
+    aspect-ratio: 9 / 16; max-height: 88svh; width: 100%;
+    border-radius: var(--raio-foto);
+  }
+  @media (orientation: landscape) {
+    .galeria__video :global(.video-leve) { aspect-ratio: 16 / 9; }
+  }
+  @media (min-width: 48em) {
+    .galeria { grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .galeria > :global(*) { grid-column: 1 / -1; }
+    .galeria > :global(.galeria__foto--metade) { grid-column: span 1; }
+    .galeria > :global(.galeria__foto--vertical) { width: 60%; justify-self: center; }
+  }
+
+  /* ---------- Próximo ---------- */
+  .proximo { padding-top: var(--secao); }
+  .proximo a {
+    display: grid;
+    gap: 0.75rem;
+    padding: clamp(3rem, 8vw, 6rem) clamp(1.5rem, 6vw, 5rem);
+    text-decoration: none;
+  }
+  .proximo__titulo { font-size: var(--t-titulo-xl); }
+  .proximo__titulo span { display: inline-block; transition: transform 1.2s var(--curva-lux); }
+  .proximo a:hover .proximo__titulo span { transform: translateX(0.3em); }
+</style>

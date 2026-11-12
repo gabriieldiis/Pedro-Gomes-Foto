@@ -1,0 +1,119 @@
+---
+/**
+ * Aviso de protótipo. Abre uma vez por sessão (some ao navegar entre páginas).
+ * Para tirar do site: apague <AvisoPrototipo /> em src/layouts/Base.astro.
+ * Para abrir sem o aviso (ex.: tirar print): adicione ?sem-aviso na URL.
+ */
+import { site } from '../site.config';
+const primeiroNome = site.nome.split(' ')[0];
+---
+<dialog class="aviso" data-aviso aria-labelledby="aviso-titulo">
+  <header class="bloco-verde aviso__topo">
+    <p class="rotulo aviso__selo">Protótipo · em construção</p>
+    <h2 id="aviso-titulo" class="display aviso__titulo">Esta é uma primeira versão do site do {primeiroNome}.</h2>
+  </header>
+  <div class="aviso__corpo">
+    <p>
+      As fotos e os vídeos que aparecem aqui são provisórios. Para seguir, precisamos de
+      <strong>algumas fotos reais do {primeiroNome}</strong>. Com elas, vamos decidir juntos a direção de arte do projeto.
+    </p>
+    <p class="aviso__lead">Com as imagens em mãos, vamos definir melhor:</p>
+    <ul class="aviso__lista">
+      <li>as animações e transições do site;</li>
+      <li>as cores principais;</li>
+      <li>a tipografia;</li>
+      <li>a melhor abordagem para alcançar e impactar mais clientes, mostrando como o trabalho do {primeiroNome} conecta e emociona as pessoas.</li>
+    </ul>
+    <p class="display aviso__assinatura">— Gabriel Dias</p>
+    <form method="dialog">
+      <button class="botao" type="submit" autofocus>Ver o protótipo</button>
+    </form>
+  </div>
+</dialog>
+
+<style>
+  .aviso {
+    position: fixed;
+    width: min(36rem, calc(100vw - 2rem));
+    max-height: calc(100dvh - 2rem);
+    padding: 0;
+    border: 1px solid var(--linha);
+    border-radius: var(--raio-orb);
+    background: var(--cartao);
+    color: var(--texto);
+    overflow: hidden auto;
+    box-shadow: 0 24px 64px rgb(12 10 9 / 0.18);
+  }
+  .aviso::backdrop {
+    background: rgb(13 16 10 / 0.55);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+  .aviso__corpo {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: 1rem;
+    padding: clamp(1.75rem, 5vw, 2.75rem);
+  }
+  .aviso__topo {
+    display: grid;
+    gap: 1rem;
+    padding: clamp(1.75rem, 5vw, 2.75rem);
+    padding-top: clamp(2.5rem, 7vw, 3.5rem);
+    border-radius: 0;
+  }
+  .aviso__selo {
+    width: fit-content;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    background: rgb(243 241 230 / 0.14);
+    border: 1px solid rgb(243 241 230 / 0.25);
+  }
+  .aviso__titulo { font-size: clamp(1.75rem, 5vw, 2.25rem); line-height: 1.12; }
+  .aviso strong { color: var(--tinta); font-weight: 500; }
+  .aviso__lead { margin-top: 0.25rem; color: var(--tinta); }
+  .aviso__lista { display: grid; gap: 0.5rem; }
+  .aviso__lista li {
+    position: relative;
+    padding-left: 1.25rem;
+  }
+  .aviso__lista li::before {
+    content: '';
+    position: absolute; left: 0; top: 0.65em;
+    width: 0.4rem; height: 0.4rem;
+    border-radius: 50%;
+    background: var(--tinta-2);
+  }
+  .aviso__assinatura {
+    margin-top: 0.5rem;
+    font-size: 1.5rem;
+    font-style: italic;
+  }
+  .aviso form { margin-top: 0.5rem; }
+  .aviso .botao { width: 100%; }
+  @media (min-width: 40em) { .aviso .botao { width: auto; } }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .aviso[open] { animation: aviso-entra 1.4s var(--curva-lux); }
+    .aviso[open]::backdrop { animation: aviso-fundo 1s ease; }
+    @keyframes aviso-entra { from { opacity: 0; transform: translateY(3rem) scale(0.97); filter: blur(6px); } }
+    @keyframes aviso-fundo { from { opacity: 0; } }
+  }
+</style>
+
+<script>
+  const CHAVE = 'aviso-prototipo-visto';
+  const aviso = document.querySelector<HTMLDialogElement>('[data-aviso]');
+  let visto = false;
+  try { visto = sessionStorage.getItem(CHAVE) === '1'; } catch {}
+  if (new URLSearchParams(location.search).has('sem-aviso')) visto = true; // útil para prints
+  if (aviso && !visto) {
+    aviso.showModal();
+    aviso.addEventListener('close', () => {
+      try { sessionStorage.setItem(CHAVE, '1'); } catch {}
+    });
+    // clicar fora do cartão também fecha
+    aviso.addEventListener('click', (e) => { if (e.target === aviso) aviso.close(); });
+  }
+</script>

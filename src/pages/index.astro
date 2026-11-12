@@ -1,0 +1,362 @@
+---
+import { getCollection } from 'astro:content';
+import { getImage } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import VideoLeve from '../components/VideoLeve.astro';
+import FilmeCompleto from '../components/FilmeCompleto.astro';
+import Foto from '../components/Foto.astro';
+import { site } from '../site.config';
+import posterMobile from '../assets/reel-poster-mobile.jpg';
+import posterDesktop from '../assets/reel-poster-desktop.jpg';
+import retrato from '../assets/retrato-sobre.jpg';
+
+const trabalhos = (await getCollection('trabalhos')).sort((a, b) => a.data.ordem - b.data.ordem);
+const social = await getImage({ src: posterDesktop, width: 1200, format: 'jpg' });
+const n = (i: number) => String(i + 1).padStart(2, '0');
+const [bioDestaque, ...bioResto] = site.bio;
+const primeiroNome = site.nome.split(' ')[0];
+---
+<Base imagemSocial={social.src} sobreVideo>
+  <!-- ---------- Abertura ---------- -->
+  <section class="abertura" aria-labelledby="nome">
+    <VideoLeve
+      nome={site.reel.nome}
+      posterMobile={posterMobile}
+      posterDesktop={posterDesktop}
+      prioridade
+      class="abertura__video"
+    />
+    <div class="abertura__texto">
+      <p class="rotulo abertura__rotulo entrada" style="--atraso: 0.2s">{site.especialidade} — {site.cidade}</p>
+      <h1 id="nome" class="display abertura__nome entrada" style="--atraso: 0.4s">{site.nome}</h1>
+      <div class="abertura__acoes entrada" style="--atraso: 0.7s">
+        <FilmeCompleto
+          vimeoId={site.reel.vimeoId}
+          arquivo={`/video/${site.reel.nome}-desktop.mp4`}
+          titulo={`Filme de ${site.nome}`}
+          class="botao--claro"
+        />
+        <a class="botao botao--vidro" href="#trabalhos">Ver trabalhos</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- Manifesto (bloco verde) ---------- -->
+  <section class="conteiner manifesto-wrap" aria-label="Manifesto">
+    <div class="bloco-verde manifesto revela-bloco">
+      <p class="rotulo">{site.nome} — fotografia</p>
+      <p class="display manifesto__frase" style="--atraso: 0.15s">
+        Do caderno aberto ao chute no ar, do linho ao vento: fotografo o instante em que uma marca vira <em>gesto</em>.
+      </p>
+      <dl class="manifesto__numeros" style="--atraso: 0.3s">
+        <div><dt>Anos de estrada</dt><dd class="display">12</dd></div>
+        <div><dt>Base em {site.cidade}</dt><dd class="display">Brasil todo</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ---------- Trabalhos ---------- -->
+  <section id="trabalhos" class="trabalhos conteiner" aria-labelledby="t-trabalhos">
+    <header class="cabecalho revela">
+      <h2 id="t-trabalhos" class="display cabecalho__titulo">Trabalhos <em>selecionados</em></h2>
+      <span class="rotulo">({String(trabalhos.length).padStart(2, '0')})</span>
+    </header>
+
+    <ol class="lista">
+      {trabalhos.map((t, i) => (
+        <li class="trabalho">
+          <a href={`/trabalhos/${t.id}/`}>
+            <div class="trabalho__imagem cortina">
+              <Foto
+                src={t.data.capa}
+                alt={t.data.capaAlt}
+                sizes="(min-width: 75em) 1200px, calc(100vw - 2rem)"
+                transicao={`capa-${t.id}`}
+              />
+            </div>
+            <div class="trabalho__linha revela" style="--atraso: 0.35s">
+              <span class="rotulo trabalho__num">{n(i)}</span>
+              <span class="trabalho__nomes">
+                <span class="display trabalho__titulo" style={`view-transition-name: titulo-${t.id}`}>{t.data.titulo}</span>
+                {t.data.subtitulo && <span class="trabalho__sub">{t.data.subtitulo}</span>}
+              </span>
+              <span class="rotulo trabalho__cliente">{t.data.cliente}</span>
+              <span class="rotulo trabalho__ano">{t.data.categoria} · {t.data.ano}</span>
+            </div>
+          </a>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <!-- ---------- Clientes (faixa verde em movimento) ---------- -->
+  <section class="conteiner clientes-wrap" aria-labelledby="t-clientes">
+    <div class="bloco-verde clientes-faixa revela-bloco">
+      <h2 id="t-clientes" class="rotulo">Marcas que confiaram no olhar do {primeiroNome}</h2>
+      <div class="letreiro" aria-hidden="true">
+        <div class="letreiro__trilho">
+          {[0, 1].map(() => (
+            <span class="display letreiro__grupo">
+              {site.clientes.map((c) => <span>{c}<i>✦</i></span>)}
+            </span>
+          ))}
+        </div>
+      </div>
+      <ul class="visually-hidden">
+        {site.clientes.map((c) => <li>{c}</li>)}
+      </ul>
+    </div>
+  </section>
+
+  <!-- ---------- Sobre ---------- -->
+  <section id="sobre" class="sobre conteiner" aria-labelledby="t-sobre">
+    <div class="bloco-verde revela-bloco sobre__grade">
+      <div class="sobre__foto cortina">
+        <Foto src={retrato} alt={`Retrato de ${site.nome}`} sizes="(min-width: 48em) 34vw, 70vw" />
+      </div>
+      <div class="sobre__texto">
+        <h2 id="t-sobre" class="rotulo revela">Sobre</h2>
+        <p class="display sobre__destaque revela" style="--atraso: 0.15s">{bioDestaque}</p>
+        {bioResto.map((p) => <p class="revela" style="--atraso: 0.3s">{p}</p>)}
+        <h3 class="rotulo sobre__sub revela" style="--atraso: 0.4s">Já fotografou para</h3>
+        <ul class="clientes revela" style="--atraso: 0.5s">
+          {site.clientes.map((c) => <li>{c}</li>)}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- Contato (bloco verde) ---------- -->
+  <section id="contato" class="contato conteiner" aria-labelledby="t-contato">
+    <div class="bloco-verde contato__cartao revela-bloco">
+      <p class="rotulo">Orçamentos, agenda e licenciamento de imagens</p>
+      <h2 id="t-contato" class="display contato__titulo" style="--atraso: 0.15s">Vamos fazer uma imagem <em>juntos?</em></h2>
+      <div class="contato__acoes" style="--atraso: 0.3s">
+        <a class="botao botao--claro" href={`mailto:${site.email}`}>Escrever um e-mail</a>
+        <a class="botao botao--contorno" href={`https://instagram.com/${site.instagram}`} rel="me">Instagram</a>
+      </div>
+      <p class="contato__email" style="--atraso: 0.45s">{site.email}</p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* ---------- Abertura ---------- */
+  .abertura {
+    position: relative;
+    height: 100svh;
+    min-height: 34rem;
+    max-height: 70rem;
+    color: var(--branco);
+    display: grid;
+    align-items: end;
+  }
+  .abertura :global(.abertura__video) { position: absolute; inset: 0; }
+  .abertura { isolation: isolate; }
+  /* tinge o vídeo com o degradê do tema (verde no claro, vermelho no escuro).
+     Intensidade: mude --tinta-video (0 = vídeo original, 1 = cor total). */
+  .abertura::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: var(--grad-bloco);
+    background-size: 140% 140%;
+    mix-blend-mode: color;
+    opacity: var(--tinta-video, 0.9);
+    animation: deriva 28s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+  /* escurece embaixo, puxando para o tom de fundo do degradê, para o texto ler bem */
+  .abertura::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+      linear-gradient(to bottom, transparent 30%, color-mix(in srgb, var(--verde-fundo) 85%, transparent) 100%),
+      radial-gradient(80% 60% at 15% 10%, color-mix(in srgb, var(--verde) 35%, transparent), transparent 70%);
+    pointer-events: none;
+  }
+  .abertura__texto {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    justify-items: start;
+    gap: 1rem;
+    padding: var(--margem);
+    padding-bottom: calc(var(--margem) + 3.5rem + env(safe-area-inset-bottom, 0px));
+  }
+  .abertura__rotulo { color: rgb(255 255 255 / 0.8); }
+  .abertura__nome {
+    color: inherit;
+    font-size: var(--t-gigante);
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    margin-left: -0.04em;
+  }
+  .abertura__acoes { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.5rem; }
+  .abertura :global(.video-leve__botao) { z-index: 3; bottom: calc(var(--margem) + env(safe-area-inset-bottom, 0px)); }
+  @media (min-width: 48em) {
+    .abertura__texto { padding-bottom: calc(var(--margem) * 1.5); }
+  }
+  /* entrada lenta do texto da abertura, ao carregar */
+  @media (prefers-reduced-motion: no-preference) {
+    .entrada { animation: entrada 2s var(--curva-lux) both; animation-delay: var(--atraso, 0s); }
+    @keyframes entrada {
+      from { opacity: 0; transform: translateY(2.5rem); filter: blur(8px); }
+    }
+  }
+
+  /* ---------- Manifesto ---------- */
+  .manifesto-wrap { padding-top: var(--secao); }
+  .manifesto {
+    display: grid;
+    gap: clamp(1.5rem, 4vw, 2.5rem);
+    padding: clamp(2.5rem, 8vw, 6rem) clamp(1.5rem, 6vw, 5rem);
+    min-height: clamp(28rem, 70vh, 40rem);
+    align-content: space-between;
+  }
+  .manifesto__frase {
+    font-size: var(--t-titulo-xl);
+    line-height: 1.05;
+    max-width: 18ch;
+  }
+  .manifesto__numeros {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgb(243 241 230 / 0.22);
+  }
+  .manifesto__numeros dt { font-size: var(--t-pequeno); }
+  .manifesto__numeros dd { font-size: var(--t-titulo-md); margin-top: 0.25rem; }
+
+  /* ---------- Cabeçalho de seção ---------- */
+  .cabecalho {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: var(--secao) 0 2.5rem;
+  }
+  .cabecalho__titulo { font-size: var(--t-titulo-lg); }
+
+  /* ---------- Trabalhos ---------- */
+  .lista { display: grid; gap: clamp(4rem, 10vw, 8rem); }
+  .trabalho a { display: grid; gap: 1.25rem; text-decoration: none; color: inherit; }
+  .trabalho__imagem {
+    overflow: hidden;
+    border-radius: var(--raio-foto);
+    background: var(--linha);
+    aspect-ratio: 4 / 5;
+  }
+  .trabalho__imagem :global(picture),
+  .trabalho__imagem :global(img) {
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .trabalho__imagem :global(img) { transition: transform 2.4s var(--curva-lux); }
+  .trabalho a:hover .trabalho__imagem :global(img) { transform: scale(1.04); }
+
+  .trabalho__linha {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.35rem 1rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--linha);
+  }
+  .trabalho__num { padding-top: 0.6em; }
+  .trabalho__nomes { display: grid; gap: 0.25rem; }
+  .trabalho__titulo { font-size: var(--t-titulo-md); width: fit-content; }
+  .trabalho__sub { color: var(--apagado); }
+  .trabalho__cliente, .trabalho__ano { grid-column: 2; }
+
+  @media (min-width: 48em) {
+    .trabalho__imagem { aspect-ratio: 16 / 9; }
+    .trabalho__linha {
+      grid-template-columns: 4rem 1fr 16rem 12rem;
+      align-items: baseline;
+    }
+    .trabalho__cliente, .trabalho__ano { grid-column: auto; }
+    .trabalho__ano { text-align: right; }
+    .trabalho__titulo { font-size: var(--t-titulo-lg); }
+  }
+
+  /* ---------- Faixa de clientes ---------- */
+  .clientes-wrap { padding-top: var(--secao); }
+  .clientes-faixa {
+    display: grid;
+    gap: 2rem;
+    padding: clamp(2.5rem, 6vw, 4rem) 0;
+  }
+  .clientes-faixa > .rotulo { padding-inline: clamp(1.5rem, 6vw, 5rem); }
+  .letreiro {
+    overflow: hidden;
+    mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  }
+  .letreiro__trilho {
+    display: flex;
+    width: max-content;
+    animation: letreiro 60s linear infinite;
+  }
+  .clientes-faixa:hover .letreiro__trilho { animation-play-state: paused; }
+  .letreiro__grupo {
+    display: flex;
+    font-size: clamp(2.25rem, 6vw, 4.5rem);
+    white-space: nowrap;
+  }
+  .letreiro__grupo > span { display: inline-flex; align-items: center; }
+  .letreiro__grupo i {
+    font-style: normal;
+    font-size: 0.4em;
+    margin: 0 0.9em;
+    opacity: 0.55;
+  }
+  .letreiro__grupo > span:nth-child(even) { font-style: italic; }
+  @keyframes letreiro { to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) {
+    .letreiro__trilho { animation: none; flex-wrap: wrap; width: auto; }
+    .letreiro__grupo + .letreiro__grupo { display: none; }
+    .letreiro__grupo { flex-wrap: wrap; white-space: normal; padding-inline: clamp(1.5rem, 6vw, 5rem); }
+  }
+
+  /* ---------- Sobre ---------- */
+  .sobre { padding-top: var(--secao); }
+  .sobre__grade {
+    display: grid;
+    gap: 2.5rem;
+    padding: clamp(1.5rem, 5vw, 4.5rem);
+  }
+  .sobre__foto { width: 70%; border-radius: var(--raio-foto); overflow: hidden; }
+  .sobre__texto { display: grid; gap: 1.25rem; max-width: 40rem; }
+  .sobre__destaque { font-size: var(--t-titulo-md); line-height: 1.2; }
+  .sobre__sub { margin-top: 1.5rem; }
+  .clientes { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .clientes li {
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    background: var(--placa);
+    color: var(--tinta);
+    font-size: var(--t-pequeno);
+  }
+  @media (min-width: 48em) {
+    .sobre__grade { grid-template-columns: repeat(12, 1fr); column-gap: 1.5rem; align-items: center; }
+    .sobre__grade > * { min-width: 0; }
+    .sobre__foto { grid-column: 1 / span 5; width: 100%; }
+    .sobre__texto { grid-column: 7 / -1; }
+  }
+
+  /* ---------- Contato ---------- */
+  .contato { padding-top: var(--secao); }
+  .contato__cartao {
+    display: grid;
+    justify-items: center;
+    gap: 1.5rem;
+    padding: clamp(4rem, 12vw, 8rem) var(--margem);
+    text-align: center;
+  }
+  .contato__titulo { font-size: var(--t-titulo-xl); max-width: 14ch; }
+  .contato__acoes { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; margin-top: 0.5rem; }
+  .contato__email { font-size: var(--t-pequeno); }
+</style>
